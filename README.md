@@ -1,17 +1,18 @@
 # NecroCore Bug Tracker — Community Edition
 
-A self-hosted **bug and idea tracker** for compatible World of Warcraft **Battle for Azeroth 8.3.7** private servers. It includes a WoW Lua addon, C++ worldserver bridge, and Python dashboard.
+A self-hosted in-game **bug and idea tracker** for compatible World of Warcraft **Battle for Azeroth 8.3.7** private servers. It consists of a WoW Lua addon, C++ worldserver chat bridge, and Python web dashboard.
 
-**Installation guide:** [README_START_HERE.md](README_START_HERE.md) (added with the full source upload).
+**Start here:** [README_START_HERE.md](README_START_HERE.md) — installation, build instructions, data locations and upgrades.
 
 ## Quick start
-1. Download and **extract the entire source ZIP**.
-2. Run `01_Setup_Dashboard.cmd` and `02_Start_Dashboard.cmd`. Default URL: `http://127.0.0.1:8088`.
-3. On a compatible core source tree run `03_Install_Server_Source.cmd`, reconfigure CMake, **rebuild worldserver**, and set `NECROBUG_INBOX` to the same absolute path as the dashboard inbox.
-4. Install the client addon with `04_Install_Client_Addon.cmd`, then test `/bug` and `/idea`.
 
-**Security:** Local PC/trusted LAN only. Do not expose the dashboard directly to the public internet, or upload `web/config.json`, ticket databases, or report logs.
+1. Download the [source ZIP](../../archive/refs/heads/main.zip) or GitHub release, and **extract everything**.
+2. Run `01_Setup_Dashboard.cmd` and then `02_Start_Dashboard.cmd`. The local dashboard defaults to `127.0.0.1:8088`.
+3. On a compatible core source tree, run `03_Install_Server_Source.cmd`, reconfigure CMake, **rebuild worldserver**, and set `NECROBUG_INBOX` to match the absolute dashboard incoming-log path.
+4. Install the client Lua addon with `04_Install_Client_Addon.cmd`, log in, and try `/bug` and `/idea`.
 
-Original Community Edition code: **GPL-3.0-or-later**, subject to upstream copyright/license obligations. Independently developed; not affiliated with Blizzard. Bug reports, suggestions and PRs are welcome on a best-effort basis, but updates and responses aren't guaranteed.
+**Warning:** Web dashboard is for the local machine or a **trusted private LAN**, not public internet hosting. Do not expose the web port or publish private `web/config.json`, `bugs.sqlite3`, or report logs. Use a dedicated test server first; only one BfA 8.3.7-derived core implementation has been verified.
 
-Official repository: https://github.com/necrosaro710/NecroCore-BugTracker
+Licensed original source: GPL-3.0-or-later, with upstream license notices preserved. Not affiliated with Blizzard Entertainment. Contributions/issues are welcome on a **best-effort** basis; update and response times are not guaranteed.
+
+Official project: https://github.com/necrosaro710/NecroCore-BugTracker

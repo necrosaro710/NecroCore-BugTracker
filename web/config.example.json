@@ -1,0 +1,11 @@
+{
+  "server_name": "NecroCore",
+  "bind_address": "127.0.0.1",
+  "port": 8088,
+  "data_directory": "data",
+  "inbox_path": "inbox/received.log",
+  "admin_login": false,
+  "admin_username": "admin",
+  "password_hash": "",
+  "attribution_repo_url": "https://github.com/necrosaro710/NecroCore-BugTracker"
+}

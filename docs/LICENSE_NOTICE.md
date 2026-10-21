@@ -1,7 +1,17 @@
-# Licensing and third-party rights
+# License and third-party material
 
-The project maintainer plans to license new Community Edition source under **GPL-3.0-or-later**, subject to the rights of all contributors. This does not supersede copyright notices or GPL obligations of any integrated upstream BFA core.
+## Community Edition original source
 
-**Public release blocker:** The provenance and redistribution permissions of `web/necrocore_assets/hero.jpg` and `citadel.jpg` have not yet been independently established. Do not assume artwork is included in a grant covering original program source. Confirm permissions or replace the images before public release.
+The newly authored C++ bridge integration, Python dashboard/tools, Lua addon, and Windows scripts in this repository are offered by the Community Edition project under **GNU GPL version 3 or later** (SPDX: `GPL-3.0-or-later`). The complete GPLv3 license text is at [`../LICENSE`](../LICENSE). This statement applies to original source to the extent the project owner controls the required rights.
 
-This is an independent community project, not affiliated with or endorsed by Blizzard.
+## Upstream core integration
+
+This addon hooks into a BFA-HavenCore/BfaCore-derived WoW emulator. Modified copies of an upstream GPL-licensed core remain subject to their original copyright notices and license requirements. Installing this bridge does **not** give permission to strip upstream copyright notices or redistribute closed-source derivatives contrary to upstream obligations.
+
+## Images and other assets
+
+The project maintainer has confirmed the bundled `hero.jpg` and `citadel.jpg` may be distributed as part of this release. The images are separate assets; do not assume they are re-licensed under the GPL grant covering original source code.
+
+## Names and marks
+
+World of Warcraft, Battle for Azeroth and related trademarks belong to their owners. This independent community project is not an official Blizzard release.

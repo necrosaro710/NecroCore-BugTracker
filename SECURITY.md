@@ -1,7 +1,7 @@
 # Security
 
-This dashboard is intended for **a local PC or trusted LAN**, not public internet hosting. It has no built-in HTTPS. If admin login is disabled, people with network access can view, edit and delete tickets. Do not port-forward the dashboard to the internet.
+NecroCore Bug Tracker's Python dashboard is designed for a **single PC or trusted LAN** only. It is **not hardened for deployment on the public internet** and does not provide HTTPS.
 
-Never upload `web/config.json`, `bugs.sqlite3`, report logs, passwords or player account information.
+If you disable admin login, anyone who can reach the dashboard can inspect, modify, or delete reports. Keep your local firewall and binding options restricted.
 
-Please contact the maintainer privately before publishing details of a vulnerability.
+Never publish your `web/config.json`, databases, inbox logs, passwords or player details. Report suspected security flaws privately to the repository maintainer before public disclosure.
