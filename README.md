@@ -4,6 +4,10 @@ A self-hosted in-game **bug and idea tracker** for compatible World of Warcraft 
 
 **Start here:** [README_START_HERE.md](README_START_HERE.md) — installation, build instructions, data locations and upgrades.
 
+## Screenshots
+
+You can add dashboard and in-game addon screenshots to this repository. Upload a screenshot (for example, `dashboard.png`) and embed it in the README using `![Dashboard screenshot](dashboard.png)`. Remove or blur private player information first.
+
 ## Quick start
 
 1. Download the [source ZIP](../../archive/refs/heads/main.zip) or GitHub release, and **extract everything**.
