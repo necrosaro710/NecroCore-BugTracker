@@ -8,9 +8,9 @@ A self-hosted in-game **bug and idea tracker** for compatible World of Warcraft 
 
 ## Screenshots
 
-![NecroCore Bug Tracker — screenshot 1](image3333.png)
+![NecroCore Bug Tracker — screenshot 1](InGameUIscreenshot.png)
 
-![NecroCore Bug Tracker — screenshot 2](imagedfdfdfd.png)
+![NecroCore Bug Tracker — screenshot 2](TicketUI.png)
 
 ## Quick start
 
