@@ -18,13 +18,13 @@ A self-hosted bug and idea reporting system for **World of Warcraft Battle for A
 5. On each WoW PC run **`04_Install_Client_Addon.cmd`**, or copy `client/NecroBugTracker/{NecroBugTracker.lua,NecroBugTracker.toc}` to `WoW/Interface/AddOns/NecroBugTracker`. Restart WoW (`/reload`).
 6. Submit a **test** `/bug`, confirm it appears on the dashboard, and check that WoW receives an acknowledgment; then test `/idea` and the Closed tab.
 
-**Already running a customized NecroCore production install? Do not overwrite it with this RC.** This is an independent release package for other owners; follow `docs/UPGRADES_AND_BACKUPS.md` before migrating data.
+**Already running a customized NecroCore production install? Back up and test before changing it.** This is an independent release package for other owners; follow `docs/UPGRADES_AND_BACKUPS.md` before migrating data.
 
 ## Upgrading an existing RC dashboard without changing the core
 
 **Do NOT reset the test server again and do NOT rebuild the worldserver just to get clearer setup wording or the green Open status.** These changes are in the Python dashboard and CSS, not the C++ bridge.
 
-To update the website installer: stop the old dashboard, extract this RC to a NEW directory, copy your existing `web/config.json` from the old release to the new release's `web` folder (do not upload your config publicly), and run `01_Setup_Dashboard.cmd` in the new folder. Choose 1 to edit and verify the new prompts, keeping the same **absolute** reports storage location. Then run `02_Start_Dashboard.cmd` in the new folder and check your old tickets are still visible. Keep the prior release folder until confirmed.
+To update the website installer: stop the old dashboard, extract this release to a NEW directory, copy your existing `web/config.json` from the old release to the new release's `web` folder (do not upload your config publicly), and run `01_Setup_Dashboard.cmd` in the new folder. Choose 1 to edit and verify the new prompts, keeping the same **absolute** reports storage location. Then run `02_Start_Dashboard.cmd` in the new folder and check your old tickets are still visible. Keep the prior release folder until confirmed.
 
 If the current `web/config.json` uses `data_directory` of `.` or `data` instead of an absolute path, your tickets may be stored under the old release folder. **Do not delete that folder.** Read `docs/UPGRADES_AND_BACKUPS.md` and migrate the data with a verified backup before changing the storage location.
 
@@ -87,11 +87,11 @@ Read `docs/COMPATIBILITY_AND_RELEASE_CHECKLIST.md` to understand the remaining c
 - Green Open status and the clickable official GitHub footer.
 - Tested addon acknowledgments and bug/idea submissions after a clean installation on a compatible BfA 8.3.7 test server.
 
-## Official GitHub project (RC1.7)
+## Official GitHub project
 
 https://github.com/necrosaro710/NecroCore-BugTracker
 
-The website's small **Powered by NecroCore Bug Tracker** footer is a clickable link to the official repository, even when old configurations have an empty `attribution_repo_url`. Until the repository is public, visitors without access may see a GitHub 404. No installer or data changes are needed to enable the link.
+The website's small **Powered by NecroCore Bug Tracker** footer is a clickable link to the official repository, even when old configurations have an empty `attribution_repo_url`. The repository is the public location for project updates and issue reports. No installer or data changes are needed to enable the link.
 
 ## License and security
 
