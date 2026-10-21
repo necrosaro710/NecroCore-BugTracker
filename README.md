@@ -6,7 +6,9 @@ A self-hosted in-game **bug and idea tracker** for compatible World of Warcraft 
 
 ## Screenshots
 
-You can add dashboard and in-game addon screenshots to this repository. Upload a screenshot (for example, `dashboard.png`) and embed it in the README using `![Dashboard screenshot](dashboard.png)`. Remove or blur private player information first.
+![NecroCore Bug Tracker — screenshot 1](image3333.png)
+
+![NecroCore Bug Tracker — screenshot 2](imagedfdfdfd.png)
 
 ## Quick start
 
