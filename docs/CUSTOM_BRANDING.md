@@ -12,6 +12,6 @@ No worldserver recompilation, MySQL changes, or addon updates are needed when re
 
 The official NecroCore Bug Tracker repository is **https://github.com/necrosaro710/NecroCore-BugTracker**. The small **Powered by NecroCore Bug Tracker** footer automatically links to this page, including when an existing `web/config.json` has a blank or missing `attribution_repo_url`. The same link appears on the admin login screen.
 
-An advanced installation may supply a validated HTTPS GitHub repository URL as `attribution_repo_url` in `web/config.json`; if blank or invalid, the official project URL is used. The dashboard requires no GitHub login to start, and the link does not load remote assets. While the repository is private, visitors without access may see a GitHub 404 until it becomes public.
+An advanced installation may supply a validated HTTPS GitHub repository URL as `attribution_repo_url` in `web/config.json`; if blank or invalid, the official project URL is used. The dashboard requires no GitHub login to start, and the link does not load remote assets. When the repository is public, visitors can follow the footer link to project documentation.
 
 **To update an existing dashboard:** replace only `web/dashboard.py`, `web/launch_dashboard.py`, and `web/necrocore_assets/necrocore.css` while the dashboard is stopped, then restart `02_Start_Dashboard.cmd`. No database, addons, or server rebuild required.
