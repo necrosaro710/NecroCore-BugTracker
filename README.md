@@ -24,3 +24,5 @@ A self-hosted in-game **bug and idea tracker** for compatible World of Warcraft 
 Licensed original source: GPL-3.0-or-later, with upstream license notices preserved. Not affiliated with Blizzard Entertainment. Contributions/issues are welcome on a **best-effort** basis; update and response times are not guaranteed.
 
 Official project: https://github.com/necrosaro710/NecroCore-BugTracker
+
+Check out HavenWoW Battle For Azeroth 8.3.7 for the best BfA content fixes!  https://github.com/HavenWoW/BFA-HavenCore
