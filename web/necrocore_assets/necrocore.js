@@ -57,3 +57,11 @@ document.addEventListener('DOMContentLoaded',()=>{
    }
  });
 });
+function copyGithubDescription(button){
+ const box=document.getElementById('github-body');if(!box)return;
+ const text=box.value;
+ const fallback=()=>{box.focus();box.select();try{document.execCommand('copy');button.textContent='Copied / selected'}catch(_){button.textContent='Press Ctrl+C to copy';}};
+ if(navigator.clipboard&&window.isSecureContext){
+  navigator.clipboard.writeText(text).then(()=>{button.textContent='Copied!';}).catch(fallback);
+ }else{fallback();}
+}
