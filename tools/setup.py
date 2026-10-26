@@ -62,7 +62,7 @@ def password_hash():
 
 
 def main():
-    print('\nNECROCORE BUG TRACKER - Community Dashboard Setup (v1.0)')
+    print('\nNECROCORE BUG TRACKER - Community Dashboard Setup (v1.1)')
     print('This changes only the web dashboard. It does NOT touch MySQL or the WoW server.\n')
     existing = {}
     editing = CFG.exists()
