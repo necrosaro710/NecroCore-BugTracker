@@ -1,7 +1,8 @@
-# NecroCore Bug Tracker dashboard v0.4.7 (sortable list + submitted date)
+# NecroCore Bug Tracker dashboard v1.1 (GitHub issue workflow)
 # Supports both existing 14-field in-game reports and new 15-field reports with priority.
 # No C++ bridge changes or database reset required.
 import html
+import github_export
 import os
 import sqlite3
 import threading
@@ -17,6 +18,7 @@ LOG = BASE / 'inbox' / 'received.log'
 STATUSES = ('Open', 'Investigating', 'Fixed', 'Retest', 'Closed')
 PRIORITIES = ('Low', 'Medium', 'High')
 KINDS = ('Bug', 'Idea')
+GITHUB_REPOSITORY = ''  # Optional game-core repo, owner/repo, not the Bug Tracker's own repo.
 CSRF = secrets.token_urlsafe(32)
 # v48 keeps assets next to this script; no CDN/internet dependencies.
 ASSETS = BASE / 'necrocore_assets'
@@ -66,6 +68,10 @@ def init():
             db.execute('ALTER TABLE reports ADD COLUMN priority TEXT NOT NULL DEFAULT "Medium"')
         if 'kind' not in columns:
             db.execute("ALTER TABLE reports ADD COLUMN kind TEXT NOT NULL DEFAULT 'Bug'")
+        if 'issue_category' not in columns:
+            db.execute("ALTER TABLE reports ADD COLUMN issue_category TEXT NOT NULL DEFAULT 'Auto'")
+        if 'github_issue_url' not in columns:
+            db.execute("ALTER TABLE reports ADD COLUMN github_issue_url TEXT NOT NULL DEFAULT ''")
         db.execute('CREATE TABLE IF NOT EXISTS deleted (ext TEXT PRIMARY KEY)')
         db.execute('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY,value TEXT)')
 
@@ -287,6 +293,7 @@ MANUAL_FIELDS = {
     'status': ('Status', 25),
     'priority': ('Priority', 10),
     'kind': ('Category (Bug or Idea)', 4),
+    'issue_category': ('GitHub issue category', 10),
 }
 
 
@@ -319,6 +326,10 @@ def new_report_form(values=None, error=None):
     out += '<div class="field"><label for="priority">Priority</label><select id="priority" name="priority">'
     for priority in PRIORITIES:
         out += f'<option value="{priority}" {"selected" if chosen_priority == priority else ""}>{priority}</option>'
+    out += '</select></div>'
+    out += '<div class="field"><label for="issue_category">Issue category</label><select name="issue_category" id="issue_category">'
+    for option in github_export.CATEGORIES:
+        out += f'<option value="{esc(option)}" {"selected" if values.get("issue_category", "Auto") == option else ""}>{esc(option)}</option>'
     out += '</select></div>'
     out += '</div><h3>Target information</h3><div class="form-grid">'
     out += field('typ', placeholder='e.g. Creature, GameObject')
@@ -386,7 +397,7 @@ def edit_report_form(report, error=None, values=None):
     for key in ('char', 'realm', 'questlog'):
         out += field(key, full=key == 'questlog')
     out += '</div><h3>Workflow</h3><div class="form-grid">'
-    for key, choices in (('status', STATUSES), ('priority', PRIORITIES), ('kind', KINDS)):
+    for key, choices in (('status', STATUSES), ('priority', PRIORITIES), ('kind', KINDS), ('issue_category', github_export.CATEGORIES)):
         out += f'<div class="field"><label for="edit-{key}">{esc(MANUAL_FIELDS[key][0])}</label>'
         out += f'<select id="edit-{key}" name="{key}">'
         for choice in choices:
@@ -538,7 +549,7 @@ def render_dashboard(query):
         out+=(f'<tr class="ticket-row {("focused-row" if is_selected else "")}" data-report="{ident}">'
               f'<td><input name="ids" value="{ident}" type="checkbox" class="row-check" aria-label="Select report #{ident}"></td>'
               f'<td><a class="ticket-id" href="{selected_link}">#{ident}</a></td>'
-              f'<td class="ticket-title"><a href="{selected_link}">{esc(human_title(row))}</a><small>{esc((row["notes"] or "")[:100] or (row["zone"] or ""))}</small></td>'
+              f'<td class="ticket-title"><a href="{selected_link}">{esc(human_title(row))}</a> <small>• {esc(github_export.classify(row))}</small><small>{esc((row["notes"] or "")[:100] or (row["zone"] or ""))}</small></td>'
               f'<td><span class="pill priority-{priority.lower()}">◆ {priority}</span></td>'
               f'<td><span class="pill status-{stat.lower().replace(" ","-")}">● {stat}</span></td>'
               f'<td class="submitter"><span class="round-avatar">{esc((row["char"] or "?")[:1].upper())}</span>{esc(row["char"] or "Unknown")}</td>'
@@ -557,7 +568,7 @@ def render_dashboard(query):
         rid=selected['id']; skind=esc(selected['kind'] or 'Bug'); title=esc(human_title(selected));
         out+=f'<div class="detail-head"><div class="eyebrow green">SELECTED REPORT</div><strong class="detail-no">#{rid}</strong><h2>{title}</h2><span class="pill category-pill">{skind}</span> <span class="pill priority-{esc((selected["priority"] or "Medium").lower())}">◆ {esc(selected["priority"] or "Medium")}</span></div>'
         out+='<div class="detail-meta">'
-        for label,value in [('Submitted By',selected['char'] or 'Unknown'),('Date Submitted',selected['created'] or 'Unknown'),('Zone / Area',selected['zone'] or 'Not recorded'),('Subzone',selected['subzone'] or 'Not recorded'),('Target ID',selected['entry'] or 'Not recorded'),('Quest',selected['quest'] or 'Not recorded')]:
+        for label,value in [('Submitted By',selected['char'] or 'Unknown'),('Date Submitted',selected['created'] or 'Unknown'),('Zone / Area',selected['zone'] or 'Not recorded'),('Subzone',selected['subzone'] or 'Not recorded'),('Target ID',selected['entry'] or 'Not recorded'),('Quest',selected['quest'] or 'Not recorded'),('Issue category',github_export.classify(selected))]:
             out+=f'<div class="meta-item"><span>{label}</span><strong>{esc(value)}</strong></div>'
         out+='</div>'
         out+=f'''<div class="detail-workflow"><div><span>Status</span><strong class="pill status-{esc((selected['status'] or 'Open').lower())}">● {esc(selected['status'] or 'Open')}</strong></div>
@@ -565,7 +576,9 @@ def render_dashboard(query):
         out+=f'<div class="detail-notes"><h3>≡ Description / Notes</h3><div class="notes-body">{esc(selected["notes"] or "No description provided.")}</div></div>'
         if selected['questlog']:
             out+=f'<div class="detail-notes"><h3>▤ Quest Context</h3><div class="notes-body">{esc(selected["questlog"])}</div></div>'
-        out+=f"""<div class="detail-actions"><a class="btn green-outline" href="/report/{rid}">View &amp; Update</a><a class="btn subtle" href="/edit/{rid}">Edit</a><button class="btn subtle" type="button" onclick="loadAndCopy('/export/{rid}',this)">Copy</button></div>"""
+        out+=f"""<div class="detail-actions"><a class="btn green-outline" href="/report/{rid}">View &amp; Update</a><a class="btn subtle" href="/edit/{rid}">Edit</a><a class="btn green-outline" href="/github/{rid}">GitHub Issue</a><button class="btn subtle" type="button" onclick="loadAndCopy('/export/{rid}',this)">Copy</button></div>"""
+        if selected['github_issue_url']:
+            out+=f'<p class="help">GitHub: <a href="{esc(selected["github_issue_url"])}" target="_blank" rel="noopener noreferrer">View linked issue</a></p>'
     else:
         out+='<div class="empty-inspector"><div>☠</div><h2>No report selected</h2><p>Choose a report from the list to inspect its details.</p></div>'
     out+='</aside></section>'
@@ -614,6 +627,54 @@ class App(BaseHTTPRequestHandler):
             self.wfile.write(data)
             return
         q = urllib.parse.parse_qs(path.query)
+
+        if path.path.startswith('/github/'):
+            try:
+                ident = int(path.path[len('/github/'):])
+            except ValueError:
+                return self.respond('Not found', 404)
+            with connect() as db:
+                db.row_factory = sqlite3.Row
+                r = db.execute('SELECT * FROM reports WHERE id=?', (ident,)).fetchone()
+            if not r:
+                return self.respond('Not found', 404)
+            repo = github_export.valid_repo(q.get('repo', [GITHUB_REPOSITORY])[0])
+            include_reporter = q.get('reporter', [''])[0] == 'yes'
+            issue_title = github_export.title(r)
+            issue_body = github_export.body(r, BRAND_NAME, include_reporter)
+            draft_url, prefilled = github_export.draft_link(repo, issue_title, issue_body)
+            out = (f'<div class="card"><h2>GitHub issue review — ticket #{ident}</h2>'
+                   '<p>No issue is sent automatically. Check the details, then finish creating it on GitHub.</p>'
+                   f'<p><a href="/report/{ident}">← Return to ticket</a></p>'
+                   '<form method="get" class="form-grid">'
+                   f'<div class="field full"><label for="repo">Destination GitHub repo (owner/repo)</label>'
+                   f'<input id="repo" name="repo" value="{esc(repo)}" placeholder="your-account/your-game-core" maxlength="140" required></div>'
+                   f'<div class="field full"><label><input type="checkbox" name="reporter" value="yes" {"checked" if include_reporter else ""}> Include character name and realm (off by default)</label></div>'
+                   '<div class="actions"><button type="submit">Update preview</button></div></form>'
+                   f'<h3>Issue title</h3><p><strong>{esc(issue_title)}</strong></p>'
+                   f'<p>Detected category: <strong>{esc(github_export.classify(r))}</strong> '
+                   f'(<a href="/edit/{ident}">change category</a>)</p>'
+                   f'<label for="github-body">Issue description (review before making public)</label>'
+                   f'<textarea class="export-text" id="github-body" readonly>{esc(issue_body)}</textarea>'
+                   '<p>Personal data is not included by default. Check the destination repository carefully.</p>')
+            if not repo:
+                out += '<p class="notice">Enter your GAME CORE project repository above, then click Update preview. Do not send gameplay bugs to the Bug Tracker software repository.</p>'
+            else:
+                if not prefilled:
+                    out += '<p class="notice">This report is too long to fit safely in a GitHub URL. Copy the full description below and paste it into the GitHub draft.</p>'
+                out += (f'<div class="actions"><a class="btn primary" href="{esc(draft_url)}" target="_blank" rel="noopener noreferrer">'
+                        + ('Open pre-filled GitHub draft' if prefilled else 'Open GitHub draft (paste description)')
+                        + '</a> <button type="button" class="btn subtle" onclick="copyGithubDescription(this)">Copy description</button></div>')
+            linked = r['github_issue_url'] or ''
+            if linked:
+                out += f'<p>Already linked: <a href="{esc(linked)}" target="_blank" rel="noopener noreferrer">{esc(linked)}</a></p>'
+            out += (f'<form method="post" action="/github/{ident}/link">'
+                    f'<input type="hidden" name="csrf" value="{esc(CSRF)}">'
+                    '<p><label for="github_issue_url">After submitting on GitHub, paste its issue URL here to link it to this ticket:</label></p>'
+                    f'<input id="github_issue_url" name="github_issue_url" type="url" value="{esc(linked)}" placeholder="https://github.com/owner/repo/issues/123" style="width:100%;max-width:640px" maxlength="400">'
+                    '<div class="actions"><button type="submit">Save GitHub issue link</button></div>'
+                    '<p class="help">The linked issue can be opened later from the ticket. Leave blank to clear the existing link.</p></form></div>')
+            return self.respond(out)
 
         if path.path == '/new':
             return self.respond(new_report_form())
@@ -670,10 +731,13 @@ class App(BaseHTTPRequestHandler):
                    + ('<p class="success" role="status">Changes saved successfully.</p>' if saved else '')
                    + '<div class="actions">'
                    + f'<a class="button-link" href="/edit/{ident}">Edit report</a>'
+                   + f'<a class="button-link" href="/github/{ident}">Review GitHub issue</a>'
                    + f'<button type="button" onclick="copyCurrentReport()">Copy for ChatGPT</button>'
                    f'<a href="/export/{ident}" target="_blank" rel="noopener">View plain-text report</a>'
                    '<span id="copy-feedback" class="feedback" role="status" aria-live="polite"></span></div>')
-            for k in ('kind', 'created', 'char', 'realm', 'priority', 'guid', 'typ', 'entry', 'map', 'x', 'y', 'zone', 'subzone', 'quest', 'questlog'):
+            if r['github_issue_url']:
+                out += f'<p><b>GitHub issue:</b> <a href="{esc(r["github_issue_url"])}" target="_blank" rel="noopener noreferrer">{esc(r["github_issue_url"])}</a></p>'
+            for k in ('kind', 'created', 'char', 'realm', 'priority', 'issue_category', 'guid', 'typ', 'entry', 'map', 'x', 'y', 'zone', 'subzone', 'quest', 'questlog'):
                 out += f'<p><b>{esc(k)}:</b> {esc(r[k])}</p>'
             out += ('</div><div class="card"><h3>Ready-to-paste report</h3>'
                     '<p>This includes all saved details. If copy is blocked, select this text and press Ctrl+C.</p>'
@@ -695,7 +759,7 @@ class App(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urllib.parse.urlsplit(self.path).path
-        if path != '/new' and path != '/bulk' and not path.startswith('/report/') and not path.startswith('/priority/') and not path.startswith('/edit/'):
+        if not (path.startswith('/github/') and path.endswith('/link')) and path != '/new' and path != '/bulk' and not path.startswith('/report/') and not path.startswith('/priority/') and not path.startswith('/edit/'):
             return self.respond('Not found', 404)
         try:
             n = int(self.headers.get('Content-Length', '0'))
@@ -706,6 +770,21 @@ class App(BaseHTTPRequestHandler):
         fields = urllib.parse.parse_qs(self.rfile.read(n).decode('utf-8', errors='replace'), keep_blank_values=True)
         if fields.get('csrf', [''])[0] != CSRF:
             return self.respond('Invalid form token', 403)
+        if path.startswith('/github/') and path.endswith('/link'):
+            try:
+                ident = int(path[len('/github/'):-len('/link')])
+            except ValueError:
+                return self.respond('Not found', 404)
+            requested = fields.get('github_issue_url', [''])[0].strip()
+            issue_url = github_export.valid_issue_url(requested) if requested else ''
+            if requested and not issue_url:
+                return self.respond('Enter a valid https://github.com/owner/repo/issues/123 URL.', 400)
+            with connect() as db:
+                changed = db.execute('UPDATE reports SET github_issue_url=? WHERE id=?', (issue_url, ident)).rowcount
+            if not changed:
+                return self.respond('Not found', 404)
+            return self.redirect('/github/' + str(ident))
+
         if path == '/bulk':
             action = fields.get('bulk_action', [''])[0]
             if action not in ('delete', 'Bug', 'Idea', 'reopen'):
@@ -781,6 +860,8 @@ class App(BaseHTTPRequestHandler):
                     return self.respond(edit_report_form(original, 'Invalid priority.', values), 400)
                 if values['kind'] not in KINDS:
                     return self.respond(edit_report_form(original, 'Invalid category.', values), 400)
+                if values['issue_category'] not in github_export.CATEGORIES:
+                    return self.respond(edit_report_form(original, 'Invalid issue category.', values), 400)
                 # Only whitelisted column names, drawn from MANUAL_FIELDS.
                 cols = tuple(MANUAL_FIELDS)
                 set_clause = ', '.join(f'"{key}"=?' for key in cols)
@@ -788,12 +869,15 @@ class App(BaseHTTPRequestHandler):
                            (*[values[key] for key in cols], ident))
             return self.redirect('/report/' + str(ident) + '?saved=1')
         if path == '/new':
-            values = {key: fields.get(key, [''])[0].strip() for key in MANUAL_FIELDS if key not in ('status', 'priority', 'kind')}
+            values = {key: fields.get(key, [''])[0].strip() for key in MANUAL_FIELDS if key not in ('status', 'priority', 'kind', 'issue_category')}
             values['status'] = 'Open'
             values['priority'] = fields.get('priority', ['Medium'])[0]
             values['kind'] = 'Bug'  # manual form submits bugs; category can be changed in Edit
+            values['issue_category'] = fields.get('issue_category', ['Auto'])[0]
             if values['priority'] not in PRIORITIES:
                 return self.respond('Bad priority', 400)
+            if values['issue_category'] not in github_export.CATEGORIES:
+                return self.respond('Bad issue category', 400)
             for key, (description, limit) in MANUAL_FIELDS.items():
                 if len(values.get(key, '')) > limit:
                     return self.respond(new_report_form(values, f'{description} is too long.'), 400)
@@ -810,6 +894,7 @@ class App(BaseHTTPRequestHandler):
                      values['guid'], values['typ'], values['entry'], values['map'], values['x'], values['y'],
                      values['zone'], values['subzone'], values['quest'], values['notes'], values['questlog'], 'Open', values['priority']))
                 report_id = cursor.lastrowid
+                db.execute('UPDATE reports SET issue_category=? WHERE id=?', (values['issue_category'], report_id))
             return self.redirect('/report/' + str(report_id))
         try:
             ident = int(path[len('/report/'):])

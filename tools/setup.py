@@ -45,6 +45,7 @@ def show_current(cfg):
     print('  Saved reports   : {}'.format(data))
     print('  Incoming reports: {}'.format(inbox))
     print('  Admin login     : {}'.format('Enabled' if cfg.get('admin_login') else 'Disabled'))
+    print('  Game issue repo : {}'.format(cfg.get('github_issue_repo') or '(ask when exporting)'))
 
 
 def password_hash():
@@ -61,7 +62,7 @@ def password_hash():
 
 
 def main():
-    print('\nNECROCORE BUG TRACKER - Community Dashboard Setup (v1.0)')
+    print('\nNECROCORE BUG TRACKER - Community Dashboard Setup (v1.1)')
     print('This changes only the web dashboard. It does NOT touch MySQL or the WoW server.\n')
     existing = {}
     editing = CFG.exists()
@@ -93,7 +94,7 @@ def main():
 
     defaults = dict(server_name='NecroCore', bind_address='127.0.0.1', port=8088,
                     data_directory='data', inbox_path='inbox/received.log',
-                    admin_login=False, admin_username='admin', password_hash='')
+                    admin_login=False, admin_username='admin', password_hash='', github_issue_repo='')
     cfg = dict(defaults)
     cfg.update(existing)  # Retain any future/extra config fields.
 
@@ -168,6 +169,18 @@ def main():
             return 0
         # Do not retain a reusable secret hash when login is disabled.
         cfg['password_hash'] = ''
+
+    print('\nOPTIONAL: Send game bug reports to a GitHub repository.')
+    print('Example: myteam/my-BfA-core (do NOT use the Bug Tracker software repository for game bugs).')
+    print('This opens a reviewable issue draft; it will not publish automatically.')
+    while True:
+        candidate = ask('Game source GitHub repository (owner/repo or blank)', cfg.get('github_issue_repo') or '')
+        if not candidate or (len(candidate) <= 140 and '/' in candidate and
+                             all(part and '..' not in part and all(ch.isalnum() or ch in '._-' for ch in part)
+                                 for part in candidate.split('/')) and len(candidate.split('/')) == 2):
+            cfg['github_issue_repo'] = candidate
+            break
+        print('Use owner/repository without a URL, or leave this blank.')
 
     print('\nSETUP SUMMARY')
     show_current(cfg)

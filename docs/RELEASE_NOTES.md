@@ -1,3 +1,13 @@
+# v1.1 — GitHub issue workflow (dashboard-only)
+
+- Standardized GitHub titles: `[Quest] Westfall: Treasure Hunting` and similar.
+- Automatic category suggestions from captured quest/target type, with editable category override.
+- Review/approve GitHub issue draft in a browser; no credentials stored, no automatic public submissions.
+- Optional copy-full-body flow when report exceeds safe GitHub URL lengths.
+- Store a validated GitHub issue URL on the existing local ticket.
+- Backed-up website-only installer; no worldserver or addon rebuild.
+- Automatic non-destructive SQLite migration for two new fields; pre-v1.1 tickets preserved.
+
 # v1.0 — Community Edition (2026-10-21)
 
 First Community Edition source release. Includes the client addon, C++ bridge installer, Python dashboard, source, themes, and Windows CMD launchers.

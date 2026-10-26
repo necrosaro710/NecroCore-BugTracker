@@ -4,6 +4,7 @@
   "port": 8088,
   "data_directory": "data",
   "inbox_path": "inbox/received.log",
+  "github_issue_repo": "",
   "admin_login": false,
   "admin_username": "admin",
   "password_hash": "",
