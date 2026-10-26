@@ -1,4 +1,4 @@
-# NecroCore Bug Tracker dashboard v0.4.7 (sortable list + submitted date)
+# NecroCore Bug Tracker dashboard v1.1 (GitHub issue workflow)
 # Supports both existing 14-field in-game reports and new 15-field reports with priority.
 # No C++ bridge changes or database reset required.
 import html
