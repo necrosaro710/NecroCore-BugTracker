@@ -81,6 +81,14 @@ Read `docs/COMPATIBILITY_AND_RELEASE_CHECKLIST.md` to understand the remaining c
 
 
 
+## Community Edition v1.1 GitHub workflow
+
+- Opens a pre-filled GitHub issue draft with a consistent title (`[Quest] Zone: Quest Name`), captured context, and optional reporter identity.
+- Save the resulting GitHub issue URL back to the local ticket. No GitHub token or automatic publishing.
+- Choose issue categories manually or let the dashboard infer from existing quest/target fields.
+- Existing installations can run `06_Update_Existing_Dashboard_v1.1.cmd` from the new package, without touching the WoW addon, C++ bridge or game server.
+- See `docs/GITHUB_ISSUES.md`.
+
 ## Community Edition v1.0 changes
 
 - Repeatable dashboard setup with edit/keep/cancel, clear reports folder prompts and configuration backups.
