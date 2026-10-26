@@ -12,6 +12,10 @@ A self-hosted in-game **bug and idea tracker** for compatible World of Warcraft 
 
 ![NecroCore Bug Tracker — screenshot 2](TicketUI.png)
 
+### GitHub issue export — tested with v1.1
+
+The dashboard successfully prepared a full GitHub issue from a local ticket, including its category, description, priority, and report context. See the [live test issue #2](https://github.com/necrosaro710/NecroCore-BugTracker/issues/2). The screenshot of that submitted issue will appear here once the image file is added to the repository.
+
 ## Quick start
 
 1. Download the [source ZIP](../../archive/refs/heads/main.zip) or GitHub release, and **extract everything**.
