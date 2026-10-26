@@ -2,7 +2,9 @@
 
 A self-hosted in-game **bug and idea tracker** for compatible World of Warcraft **Battle for Azeroth 8.3.7** private servers. It consists of a WoW Lua addon, C++ worldserver chat bridge, and Python web dashboard.
 
-**[⬇ Download Community Edition v1.0 (ZIP)](https://github.com/necrosaro710/NecroCore-BugTracker/releases/download/1.0/NecroCore_BugTracker_Community_Edition_v1.0.zip)**
+**[⬇ Download latest v1.1 source (GitHub ZIP)](https://github.com/necrosaro710/NecroCore-BugTracker/archive/refs/heads/main.zip)** — includes the GitHub issue exporter and dashboard updater. Extract the whole archive before running the scripts.
+
+**[Download the original v1.0 release](https://github.com/necrosaro710/NecroCore-BugTracker/releases/tag/1.0)**
 
 **Installation guide:** [README_START_HERE.md](README_START_HERE.md) — setup, build instructions, data locations and upgrades.
 
