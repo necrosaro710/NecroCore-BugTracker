@@ -56,6 +56,10 @@ dashboard.ASSETS = PACKAGE / 'necrocore_assets'
 # "Powered by NecroCore Bug Tracker" credit is NOT a configurable field.
 SITE_NAME = str(CONFIG.get('server_name', 'NecroCore')).strip()[:48] or 'NecroCore'
 dashboard.BRAND_NAME = SITE_NAME
+# Optional destination for game bugs (different from the Bug Tracker code repo).
+dashboard.GITHUB_REPOSITORY = dashboard.github_export.valid_repo(CONFIG.get('github_issue_repo', ''))
+if CONFIG.get('github_issue_repo') and not dashboard.GITHUB_REPOSITORY:
+    print('WARNING: Invalid GitHub repository setting; export requires owner/repo.')
 
 # The official project URL is the default. An optional, valid config override
 # remains supported for mirrors, but blank/older configs still link to the official repo.
