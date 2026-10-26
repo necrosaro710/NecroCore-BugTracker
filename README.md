@@ -12,6 +12,14 @@ A self-hosted in-game **bug and idea tracker** for compatible World of Warcraft 
 
 ![NecroCore Bug Tracker — screenshot 2](TicketUI.png)
 
+### GitHub issue export — tested with v1.1
+
+The dashboard successfully prepared a full GitHub issue from a local ticket, including its category, description, priority, and report context. This is an actual test report submitted through the v1.1 GitHub export workflow.
+
+![GitHub Issue #2 created from NecroCore Bug Tracker](screenshots/GitHub_Issue_Export_Test.png)
+
+[View the actual test issue (#2)](https://github.com/necrosaro710/NecroCore-BugTracker/issues/2).
+
 ## GitHub issue review (v1.1)
 
 Review a gameplay ticket, generate a standardized issue title such as `[Quest] Westfall: Treasure Hunting`, and open a **prefilled GitHub draft** in the game server's repository. You approve and submit it on GitHub yourself; the tracker then lets you attach the resulting issue URL to the original ticket. Reporter identity is excluded by default. See [GitHub export instructions](docs/GITHUB_ISSUES.md).
