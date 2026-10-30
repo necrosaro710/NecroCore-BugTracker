@@ -88,6 +88,67 @@ quest:SetScript('OnTabPressed',function(self)
   notes:SetFocus()
 end)
 local save=CreateFrame('Button',nil,f,'UIPanelButtonTemplate');save:SetSize(142,28);save:SetPoint('BOTTOMRIGHT',-17,15);save:SetText('Submit to server')
+local shotEpoch=nil
+local shotInProgress=false
+local shotIssued=false
+local shotWatcher=CreateFrame('Frame')
+local shotDelay=CreateFrame('Frame') -- reused for every screenshot; no leaking UI frames
+shotWatcher:RegisterEvent('SCREENSHOT_SUCCEEDED')
+shotWatcher:RegisterEvent('SCREENSHOT_FAILED')
+local shotButton=CreateFrame('Button',nil,f,'UIPanelButtonTemplate')
+shotButton:SetSize(157,28);shotButton:SetPoint('BOTTOMLEFT',17,15)
+shotButton:SetText('Take Screenshot')
+local function finishScreenshot()
+  if not shotInProgress then return end
+  shotInProgress=false
+  shotIssued=false
+  shotButton:Enable()
+  shotButton:SetText(shotEpoch and 'Screenshot taken' or 'Take Screenshot')
+  f:Show()
+end
+shotWatcher:SetScript('OnEvent',function(_,event)
+  if not shotInProgress or not shotIssued then return end
+  if event=='SCREENSHOT_FAILED' then
+    shotEpoch=nil
+    print('|cffff4444NecroBug:|r Screenshot failed. Please try again.')
+  elseif event=='SCREENSHOT_SUCCEEDED' then
+    print('|cff00ff00NecroBug:|r Screenshot saved. The PC helper will attach it after you submit.')
+  end
+  -- Keep the report frame hidden until WoW reports the screenshot was taken.
+  C_Timer.After(0.15,finishScreenshot)
+end)
+shotButton:SetScript('OnClick',function()
+  if shotInProgress then return end
+  -- Never risk capturing the report window by taking an immediate screenshot.
+  if not C_Timer or not C_Timer.After or type(Screenshot)~='function' then
+    print('|cffff4444NecroBug:|r Screenshot support is unavailable in this client.')
+    return
+  end
+  shotInProgress=true
+  shotIssued=false
+  shotEpoch=nil
+  shotButton:Disable()
+  f:Hide()
+  -- Let the UI redraw after the dialog disappears before taking a screenshot.
+  -- Wait multiple frames even at a lower frame rate: the hidden dialog must not be pictured.
+  local frames=0
+  local elapsed=0
+  shotDelay:SetScript('OnUpdate',function(self,dt)
+    frames=frames+1
+    elapsed=elapsed+dt
+    if frames<2 or elapsed<0.4 then return end
+    self:SetScript('OnUpdate',nil)
+    if not shotInProgress then return end
+    if f:IsShown() then f:Hide() end
+    shotEpoch=GetServerTime()
+    shotIssued=true
+    Screenshot()
+    -- Recovery for clients that do not emit screenshot completion events.
+    -- The report remains hidden through the actual Screenshot() call.
+    C_Timer.After(3.0,finishScreenshot)
+  end)
+  -- Do not print a chat message before Screenshot(): it would appear in the image.
+end)
 local cancel=CreateFrame('Button',nil,f,'UIPanelButtonTemplate');cancel:SetSize(90,28);cancel:SetPoint('RIGHT',save,'LEFT',-8,0);cancel:SetText('Cancel');cancel:SetScript('OnClick',function() f:Hide() end)
 local snap={};local queue={};local timer=0;local pending={}
 local mode='Bug'
@@ -134,11 +195,12 @@ ideaTab:SetScript('OnClick',function() choose('Idea') end)
 bugHit:SetScript('OnClick',function() choose('Bug') end)
 ideaHit:SetScript('OnClick',function() choose('Idea') end)
 local function open(which)
+  if shotInProgress then return end
   choose(which=='Idea' and 'Idea' or 'Bug')
   local name,guid,typ,entry=targetInfo();local map=C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player') or 0
   local p=map and C_Map and C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(map,'player')
   snap={name=name,guid=guid,typ=typ,entry=entry,map=map or 0,x=p and p.x*100 or 0,y=p and p.y*100 or 0,zone=GetZoneText() or '',subzone=GetSubZoneText() or '',char=UnitName('player') or '',realm=GetRealmName() or '',quest_log=quests()}
-  label:SetText(mode=='Idea' and ('Idea from '..snap.char..' in '..snap.zone) or ('Target: '..name..'  ['..typ..' '..entry..']'));quest:SetText('');notes:SetText('');setPriority('Medium');scroll:SetVerticalScroll(0);f:Show();quest:SetFocus();updateHint()
+  label:SetText(mode=='Idea' and ('Idea from '..snap.char..' in '..snap.zone) or ('Target: '..name..'  ['..typ..' '..entry..']'));quest:SetText('');notes:SetText('');setPriority('Medium');shotEpoch=nil;shotButton:Enable();shotButton:SetText('Take Screenshot');scroll:SetVerticalScroll(0);f:Show();quest:SetFocus();updateHint()
 end
 local function transport(record)
   local rid=tostring(GetServerTime())..'-'..tostring(math.random(100000,999999))
@@ -156,6 +218,9 @@ save:SetScript('OnClick',function()
   if notes:GetText():match('^%s*$') then print('|cffff4444NecroBug:|r Enter a description.');return end
   -- Fields 1-14: original report. Field 15: user's selected priority. Field 16: category.
   local fields={snap.char,snap.realm,idea and quest:GetText() or snap.name,snap.guid,snap.typ,snap.entry,snap.map,string.format('%.3f',snap.x),string.format('%.3f',snap.y),snap.zone,snap.subzone,idea and '' or quest:GetText(),notes:GetText(),snap.quest_log,selectedPriority,idea and 'Idea' or 'Bug'}
+  -- Only append the 17th field when a screenshot was taken. Old reports stay compatible.
+  -- The worldserver continues forwarding text; image bytes are NEVER sent via addon chat.
+  if shotEpoch then fields[#fields+1]=tostring(shotEpoch) end
   local arr={};for i,v in ipairs(fields) do arr[i]=enc(v) end
   local data=table.concat(arr,'|')
   NecroBugLocalBackup[#NecroBugLocalBackup+1]=data

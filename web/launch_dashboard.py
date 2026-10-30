@@ -15,6 +15,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 import dashboard
+import screenshot_uploads
 
 PACKAGE = Path(__file__).resolve().parent
 CONFIG_PATH = PACKAGE / 'config.json'
@@ -51,6 +52,7 @@ LOG.parent.mkdir(parents=True, exist_ok=True)
 dashboard.BASE = DATA_DIR
 dashboard.DB = DATA_DIR / 'bugs.sqlite3'
 dashboard.LOG = LOG
+dashboard.SCREENSHOT_KEY = screenshot_uploads.private_key(DATA_DIR)
 dashboard.ASSETS = PACKAGE / 'necrocore_assets'
 # Configured name is used only for customer-facing UI. The footer's
 # "Powered by NecroCore Bug Tracker" credit is NOT a configurable field.
@@ -136,7 +138,7 @@ class App(dashboard.App):
         path = urlsplit(self.path).path
         if LOGIN_ENABLED and path == '/login':
             return self.respond(login_html())
-        if LOGIN_ENABLED and path not in dashboard.STATIC_ASSETS and not self.authorized():
+        if LOGIN_ENABLED and path not in dashboard.STATIC_ASSETS and path != '/_screenshot/pending' and not self.authorized():
             self.send_response(303)
             self.send_header('Location', '/login')
             self.send_header('Cache-Control', 'no-store')
@@ -145,6 +147,8 @@ class App(dashboard.App):
         return super().do_GET()
 
     def do_POST(self):
+        if urlsplit(self.path).path.startswith('/_screenshot/upload/'):
+            return dashboard.App.do_POST(self)
         if LOGIN_ENABLED and urlsplit(self.path).path == '/login':
             length = int(self.headers.get('Content-Length', 0))
             if length <= 0 or length > 4096:

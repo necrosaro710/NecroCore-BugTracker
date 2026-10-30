@@ -2,7 +2,7 @@
 setlocal EnableExtensions DisableDelayedExpansion
 set "ROOT=%~dp0"
 echo.
-echo NecroCore Bug Tracker - Community Dashboard Setup (v1.1)
+echo NecroCore Bug Tracker - Community Dashboard Setup (v1.2)
 echo ==========================================================
 echo Package folder: "%ROOT%"
 echo.
