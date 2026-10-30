@@ -1,6 +1,6 @@
-# NecroCore Bug Tracker — Community Edition v1.0
+# NecroCore Bug Tracker — Community Edition v1.2
 
-**Status:** Community Edition v1.0, tested on one compatible BfA 8.3.7 Windows test server. Compatibility with other core forks is not guaranteed. The website is for a local PC or trusted LAN only.
+**Status:** Community Edition v1.2, tested on one compatible BfA 8.3.7 Windows test server. Compatibility with other core forks is not guaranteed. The website is for a local PC or trusted LAN only.
 
 A self-hosted bug and idea reporting system for **World of Warcraft Battle for Azeroth 8.3.7** servers using a compatible BFA-HavenCore/BfaCore chat implementation. It contains:
 
@@ -8,6 +8,10 @@ A self-hosted bug and idea reporting system for **World of Warcraft Battle for A
 - **Python dashboard**: dark NecroCore design, Bugs / Ideas / All / Closed tabs, search, filtering, edit, exports, bulk delete, move category, reopen archived tickets.
 - **C++ bridge source**: receives NECROBUG addon fragments and appends submissions to a log; sends confirmation after successful append.
 - **Windows CMD setup**: portable directories, no MySQL changes, and **no third-party Python packages** for the dashboard.
+
+## New in v1.2 — screenshots
+
+The `/bug` addon has a **Take Screenshot** button. The report window hides before the screenshot is captured. To attach the image to a submitted ticket, run the optional Windows screenshot companion on the same PC as the WoW client (or another authorized client PC). The dashboard and companion use a private upload key; **do not publish it**. See [the complete screenshot guide](docs/SCREENSHOTS_V1_2.md) for the exact order of installation and the `07_`, `08_` and `09_` CMD launchers. Existing v1.1 installations need only a dashboard and addon update—**no worldserver rebuild**.
 
 ## Quick install (on a NEW server)
 

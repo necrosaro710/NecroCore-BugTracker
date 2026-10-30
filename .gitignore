@@ -1,22 +1,16 @@
 web/config.json
-**/config.before_edit_*
-.env
-*.key
 *.sqlite3
 *.sqlite3-*
-**/received.log
-NecroBugTracker/
-NecroBugTracker_Source_Backups/
-NecroBugTracker_CleanTest_Backups/
 **/inbox/
-**/data/
 __pycache__/
 *.py[cod]
-.vs/
-build/
-build_*/
-*.obj
-*.pch
-*.pdb
-*.exe
-*.dll
+*.key
+.env
+
+# Screenshot client private pairing configuration
+client_helper/companion_config.json
+**/.screenshot_upload_key
+**/attachments/
+# Official portable runtime downloaded on first client launch
+client_helper/runtime/
+client_helper/python-3.14.3-embed-amd64.zip

@@ -1,44 +1,39 @@
 # NecroCore Bug Tracker — Community Edition
 
-A self-hosted in-game **bug and idea tracker** for compatible World of Warcraft **Battle for Azeroth 8.3.7** private servers. It consists of a WoW Lua addon, C++ worldserver chat bridge, and Python web dashboard.
+A self-hosted in-game **bug and idea tracker** for compatible World of Warcraft **Battle for Azeroth 8.3.7** private servers. Includes a WoW Lua addon, C++ worldserver chat bridge, and Python web dashboard.
 
-**[⬇ Download Community Edition v1.1 (ZIP)](https://github.com/necrosaro710/NecroCore-BugTracker/archive/refs/tags/v1.1.zip)** — the official v1.1 tagged source, including the GitHub issue exporter and dashboard updater. Extract the entire ZIP before running any scripts.
-
-**[Download the original v1.0 release](https://github.com/necrosaro710/NecroCore-BugTracker/releases/tag/1.0)**
-
-**Installation guide:** [README_START_HERE.md](README_START_HERE.md) — setup, build instructions, data locations and upgrades.
+**[⬇ Download the latest release](https://github.com/necrosaro710/NecroCore-BugTracker/releases/latest)** · **[Installation guide](README_START_HERE.md)**
 
 ## Screenshots
 
-![NecroCore Bug Tracker — screenshot 1](InGameUIscreenshot.png)
+![In-game reporting UI](InGameUIscreenshot.png)
 
-![NecroCore Bug Tracker — screenshot 2](TicketUI.png)
+![NecroCore ticket dashboard](TicketUI.png)
 
-### GitHub issue export — tested with v1.1
+### GitHub issue integration (v1.1)
 
-The dashboard successfully prepared a full GitHub issue from a local ticket, including its category, description, priority, and report context. This is an actual test report submitted through the v1.1 GitHub export workflow.
+Turn a gameplay report into a reviewed, prefilled GitHub issue, with standardized titles and report context. Publishing is manual, and reporter identity is excluded by default.
 
-![GitHub Issue #2 created from NecroCore Bug Tracker](screenshots/GitHub_Issue_Export_Test.png)
+![GitHub issue created from a tracker ticket](screenshots/GitHub_Issue_Export_Test.png)
 
-[View the actual test issue (#2)](https://github.com/necrosaro710/NecroCore-BugTracker/issues/2).
+[View our verified test issue #2](https://github.com/necrosaro710/NecroCore-BugTracker/issues/2) (closed after testing).
 
-## GitHub issue review (v1.1)
+### Screenshot attachments (new in v1.2)
 
-Review a gameplay ticket, generate a standardized issue title such as `[Quest] Westfall: Treasure Hunting`, and open a **prefilled GitHub draft** in the game server's repository. You approve and submit it on GitHub yourself; the tracker then lets you attach the resulting issue URL to the original ticket. Reporter identity is excluded by default. See [GitHub export instructions](docs/GITHUB_ISSUES.md).
+The in-game `/bug` window includes **Take Screenshot**. It hides itself before capture and returns afterward. An optional Windows screenshot companion matches the image to the submitted report and attaches it to the local dashboard ticket. **The companion must be running for automatic uploads.** Screenshot upload is available only on the local PC or a trusted LAN, not via a public Internet service.
 
-For existing installs, use `06_Update_Existing_Dashboard_v1.1.cmd` from a separately extracted v1.1 ZIP (stop the running dashboard first). No worldserver rebuild or addon reinstall.
+See [v1.2 screenshot setup, privacy limits and upgrade steps](docs/SCREENSHOTS_V1_2.md).
 
 ## Quick start
 
-1. Download the [source ZIP](../../archive/refs/heads/main.zip) or GitHub release, and **extract everything**.
-2. Run `01_Setup_Dashboard.cmd` and then `02_Start_Dashboard.cmd`. The local dashboard defaults to `127.0.0.1:8088`.
-3. On a compatible core source tree, run `03_Install_Server_Source.cmd`, reconfigure CMake, **rebuild worldserver**, and set `NECROBUG_INBOX` to match the absolute dashboard incoming-log path.
-4. Install the client Lua addon with `04_Install_Client_Addon.cmd`, log in, and try `/bug` and `/idea`.
+1. Download the latest tagged release and **extract the entire ZIP** (do not run CMD files inside a ZIP).
+2. Run `01_Setup_Dashboard.cmd`, then `02_Start_Dashboard.cmd` on the dashboard PC. By default it serves `http://127.0.0.1:8088`.
+3. On a compatible BFA-HavenCore source tree, run `03_Install_Server_Source.cmd`, reconfigure CMake, **rebuild worldserver**, and point `NECROBUG_INBOX` to the dashboard's absolute incoming log path. (Existing compatible v1.x installations do not need a C++ rebuild for v1.2.)
+4. Install the addon with `04_Install_Client_Addon.cmd` on the WoW client. Log in and try `/bug` and `/idea`.
+5. Optional screenshots: on an existing v1.1 dashboard, run `09_Update_Existing_Dashboard_v1.2.cmd`; then use `07_Show_Server_Screenshot_Key.cmd` on the dashboard PC and `08_Start_Screenshot_Companion_CLIENT.cmd` on the WoW client PC.
 
-**Warning:** Web dashboard is for the local machine or a **trusted private LAN**, not public internet hosting. Do not expose the web port or publish private `web/config.json`, `bugs.sqlite3`, or report logs. Use a dedicated test server first; only one BfA 8.3.7-derived core implementation has been verified.
+**Security:** The dashboard is intended only for a local computer or a **trusted private LAN**. Do not expose it to the public internet, upload private `web/config.json`, SQLite reports, inbox logs, upload keys, or screenshot companion configuration. Test on a nonproduction server first. Compatibility has been verified with one BfA 8.3.7-derived core only.
 
-Licensed original source: GPL-3.0-or-later, with upstream license notices preserved. Not affiliated with Blizzard Entertainment. Contributions/issues are welcome on a **best-effort** basis; update and response times are not guaranteed.
+Original source under GPL-3.0-or-later, with upstream notices preserved. Not affiliated with Blizzard Entertainment. Contributions and bug reports are welcome on a **best-effort** basis without guaranteed response times.
 
-Official project: https://github.com/necrosaro710/NecroCore-BugTracker
-
-Check out HavenWoW Battle For Azeroth 8.3.7 for the best BfA content fixes!  https://github.com/HavenWoW/BFA-HavenCore
+Thanks to [HavenWoW BFA-HavenCore](https://github.com/HavenWoW/BFA-HavenCore) for core development and BfA fixes.

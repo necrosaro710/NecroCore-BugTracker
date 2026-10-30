@@ -3,6 +3,8 @@
 # No C++ bridge changes or database reset required.
 import html
 import github_export
+import screenshot_uploads
+import json
 import os
 import sqlite3
 import threading
@@ -19,6 +21,7 @@ STATUSES = ('Open', 'Investigating', 'Fixed', 'Retest', 'Closed')
 PRIORITIES = ('Low', 'Medium', 'High')
 KINDS = ('Bug', 'Idea')
 GITHUB_REPOSITORY = ''  # Optional game-core repo, owner/repo, not the Bug Tracker's own repo.
+SCREENSHOT_KEY = ''  # Generated once and stored in the private reports data directory.
 CSRF = secrets.token_urlsafe(32)
 # v48 keeps assets next to this script; no CDN/internet dependencies.
 ASSETS = BASE / 'necrocore_assets'
@@ -74,6 +77,7 @@ def init():
             db.execute("ALTER TABLE reports ADD COLUMN github_issue_url TEXT NOT NULL DEFAULT ''")
         db.execute('CREATE TABLE IF NOT EXISTS deleted (ext TEXT PRIMARY KEY)')
         db.execute('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY,value TEXT)')
+        screenshot_uploads.migrate(db)
 
 
 def ingest():
@@ -101,24 +105,29 @@ def ingest():
                     fields = line.split('|')
                     # 14 fields: original bug; 15: priority; 16: priority plus type Bug/Idea.
                     # Worldserver bridge passes client report content through unchanged.
-                    if len(fields) not in (17, 18, 19) or fields[0] != 'NB2':
+                    if len(fields) not in (17, 18, 19, 20) or fields[0] != 'NB2':
                         continue
                     rid, actual = fields[1:3]
                     data = [urllib.parse.unquote(x) for x in fields[3:]]
-                    if len(data) not in (14, 15, 16):
+                    if len(data) not in (14, 15, 16, 17):
                         continue
                     priority = data[14] if len(data) >= 15 else 'Medium'
                     if priority not in PRIORITIES:
                         priority = 'Medium'
-                    kind = data[15] if len(data) == 16 else 'Bug'
+                    kind = data[15] if len(data) >= 16 else 'Bug'
                     if kind not in KINDS:
                         kind = 'Bug'
+                    capture_time = 0
+                    if len(data) == 17 and data[16].isdecimal():
+                        proposed = int(data[16])
+                        if 1600000000 <= proposed <= int(time.time()) + 300:
+                            capture_time = proposed
                     external = 'server-' + rid + '-' + actual
                     if db.execute('SELECT 1 FROM deleted WHERE ext=?', (external,)).fetchone():
                         continue
                     # Never trust the client-supplied character name; use the server-verified sender.
-                    db.execute('''INSERT OR IGNORE INTO reports(ext,char,realm,target,guid,typ,entry,map,x,y,zone,subzone,quest,notes,questlog,priority,kind)
-                                  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (external, actual, *data[1:14], priority, kind))
+                    db.execute('''INSERT OR IGNORE INTO reports(ext,char,realm,target,guid,typ,entry,map,x,y,zone,subzone,quest,notes,questlog,priority,kind,screenshot_epoch)
+                                  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (external, actual, *data[1:14], priority, kind, capture_time))
                 except (ValueError, UnicodeError, sqlite3.Error) as e:
                     print('Record import error:', e)
         db.execute('INSERT INTO meta(key,value) VALUES("offset",?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', (str(offset),))
@@ -576,6 +585,15 @@ def render_dashboard(query):
         out+=f'<div class="detail-notes"><h3>≡ Description / Notes</h3><div class="notes-body">{esc(selected["notes"] or "No description provided.")}</div></div>'
         if selected['questlog']:
             out+=f'<div class="detail-notes"><h3>▤ Quest Context</h3><div class="notes-body">{esc(selected["questlog"])}</div></div>'
+        with connect() as db:
+            selected_picture = screenshot_uploads.attachment(db, BASE, rid)
+        if selected_picture:
+            out+=(f'<div class="detail-notes"><h3>📷 Attached Screenshot</h3>'
+                  f'<a href="/screenshot/{rid}" target="_blank" rel="noopener">'
+                  f'<img src="/screenshot/{rid}" alt="Screenshot for ticket {rid}" '
+                  'style="max-width:100%;max-height:280px;object-fit:contain"></a></div>')
+        elif selected['screenshot_epoch']:
+            out+='<div class="detail-notes"><p class="help">Screenshot is waiting for the client companion.</p></div>'
         out+=f"""<div class="detail-actions"><a class="btn green-outline" href="/report/{rid}">View &amp; Update</a><a class="btn subtle" href="/edit/{rid}">Edit</a><a class="btn green-outline" href="/github/{rid}">GitHub Issue</a><button class="btn subtle" type="button" onclick="loadAndCopy('/export/{rid}',this)">Copy</button></div>"""
         if selected['github_issue_url']:
             out+=f'<p class="help">GitHub: <a href="{esc(selected["github_issue_url"])}" target="_blank" rel="noopener noreferrer">View linked issue</a></p>'
@@ -593,6 +611,16 @@ class App(BaseHTTPRequestHandler):
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.end_headers()
         self.wfile.write(data)
+
+    def respond_json(self, obj, status=200):
+        raw = json.dumps(obj).encode('utf-8')
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(raw)))
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.end_headers()
+        self.wfile.write(raw)
 
     def respond_text(self, content):
         data = content.encode('utf-8')
@@ -612,6 +640,29 @@ class App(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urllib.parse.urlsplit(self.path)
+        if path.path == '/_screenshot/pending':
+            if not screenshot_uploads.authorize(self.headers.get('X-NecroScreenshot-Key'), SCREENSHOT_KEY):
+                return self.respond_json({'error':'Upload key required'}, 403)
+            with connect() as db:
+                records = screenshot_uploads.pending(db)
+            return self.respond_json({'pending': records})
+        if path.path.startswith('/screenshot/'):
+            try:
+                ident = int(path.path[len('/screenshot/'):])
+            except ValueError:
+                return self.respond('Not found', 404)
+            with connect() as db:
+                image = screenshot_uploads.attachment(db, BASE, ident)
+            if image is None:
+                return self.respond('Not found', 404)
+            content = image.read_bytes()
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/png' if image.suffix=='.png' else 'image/jpeg')
+            self.send_header('Content-Length', str(len(content)))
+            self.send_header('Cache-Control', 'no-store')
+            self.send_header('X-Content-Type-Options', 'nosniff')
+            self.end_headers()
+            return self.wfile.write(content)
         if path.path in STATIC_ASSETS:
             name, mime = STATIC_ASSETS[path.path]
             file_path = ASSETS / name
@@ -665,6 +716,10 @@ class App(BaseHTTPRequestHandler):
                 out += (f'<div class="actions"><a class="btn primary" href="{esc(draft_url)}" target="_blank" rel="noopener noreferrer">'
                         + ('Open pre-filled GitHub draft' if prefilled else 'Open GitHub draft (paste description)')
                         + '</a> <button type="button" class="btn subtle" onclick="copyGithubDescription(this)">Copy description</button></div>')
+            with connect() as db:
+                pic = screenshot_uploads.attachment(db, BASE, ident)
+            if pic:
+                out += f'<p><a href="/screenshot/{ident}" target="_blank" rel="noopener">View/download the attached screenshot</a> — drag the image into the GitHub issue; a local dashboard image cannot be embedded in public GitHub automatically.</p>'
             linked = r['github_issue_url'] or ''
             if linked:
                 out += f'<p>Already linked: <a href="{esc(linked)}" target="_blank" rel="noopener noreferrer">{esc(linked)}</a></p>'
@@ -735,6 +790,16 @@ class App(BaseHTTPRequestHandler):
                    + f'<button type="button" onclick="copyCurrentReport()">Copy for ChatGPT</button>'
                    f'<a href="/export/{ident}" target="_blank" rel="noopener">View plain-text report</a>'
                    '<span id="copy-feedback" class="feedback" role="status" aria-live="polite"></span></div>')
+            with connect() as db:
+                picture = screenshot_uploads.attachment(db, BASE, ident)
+            if picture:
+                out += (f'<div class="card"><h3>Attached screenshot</h3>'
+                        f'<a href="/screenshot/{ident}" target="_blank" rel="noopener">'
+                        f'<img alt="Screenshot for ticket {ident}" src="/screenshot/{ident}" '
+                        'style="display:block;max-width:100%;max-height:560px;object-fit:contain"></a>'
+                        '<p class="help">Click to view full size. To include on GitHub, download it and attach it to the GitHub issue manually.</p></div>')
+            elif r['screenshot_epoch']:
+                out += '<p class="notice">Screenshot requested: waiting for the Windows companion to upload it.</p>'
             if r['github_issue_url']:
                 out += f'<p><b>GitHub issue:</b> <a href="{esc(r["github_issue_url"])}" target="_blank" rel="noopener noreferrer">{esc(r["github_issue_url"])}</a></p>'
             for k in ('kind', 'created', 'char', 'realm', 'priority', 'issue_category', 'guid', 'typ', 'entry', 'map', 'x', 'y', 'zone', 'subzone', 'quest', 'questlog'):
@@ -759,6 +824,25 @@ class App(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urllib.parse.urlsplit(self.path).path
+        if path.startswith('/_screenshot/upload/'):
+            if not screenshot_uploads.authorize(self.headers.get('X-NecroScreenshot-Key'), SCREENSHOT_KEY):
+                return self.respond_json({'error':'Upload key required'}, 403)
+            try:
+                ident = int(path[len('/_screenshot/upload/'):])
+                epoch = int(self.headers.get('X-NecroScreenshot-Epoch', '0'))
+                length = int(self.headers.get('Content-Length','0'))
+            except ValueError:
+                return self.respond_json({'error':'Invalid ticket or size'}, 400)
+            if not 1 <= length <= screenshot_uploads.MAX_IMAGE or ident <= 0:
+                return self.respond_json({'error':'Unsupported image size'}, 413)
+            data = self.rfile.read(length)
+            with connect() as db:
+                try:
+                    screenshot_uploads.store(db, BASE, ident,
+                        self.headers.get('X-NecroScreenshot-Character', ''), epoch, data)
+                except (ValueError, sqlite3.Error, OSError) as error:
+                    return self.respond_json({'error':str(error)}, 400)
+            return self.respond_json({'attached':True, 'ticket':ident})
         if not (path.startswith('/github/') and path.endswith('/link')) and path != '/new' and path != '/bulk' and not path.startswith('/report/') and not path.startswith('/priority/') and not path.startswith('/edit/'):
             return self.respond('Not found', 404)
         try:

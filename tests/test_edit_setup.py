@@ -11,7 +11,7 @@ PKG = Path(__file__).resolve().parent.parent
 
 def execute(tmp, answers):
     cmd = [sys.executable, str(tmp / 'tools' / 'setup.py')]
-    result = subprocess.run(cmd, input=answers, text=True, capture_output=True, timeout=15)
+    result = subprocess.run(cmd, input=answers+"\n\n", text=True, capture_output=True, timeout=15)
     assert result.returncode == 0, result.stdout + '\n' + result.stderr
     return result.stdout
 

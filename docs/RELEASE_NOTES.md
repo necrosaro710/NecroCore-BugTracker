@@ -16,3 +16,7 @@ First Community Edition source release. Includes the client addon, C++ bridge in
 - Web dashboard setup can be edited later and preserves existing configuration/data.
 - Green Open status, fixed GitHub footer hyperlink, and local/trusted-LAN bind options.
 - See README_START_HERE.md for setup. This is not guaranteed to work on unrelated emulator forks and is not hardened for public internet hosting.
+
+
+## v1.2 — In-game screenshots (2026-10-30)
+Added an in-game **Take Screenshot** button, hidden-window capture, and an optional Windows companion for private screenshot upload to matching dashboard tickets. The dashboard accepts one JPEG/PNG screenshot per report (8 MiB maximum), with a private upload key and conservative character/time matching. No C++ worldserver rebuild is needed for existing installations. Tested end-to-end on the BfA test client with the bug window absent from the image. See docs/SCREENSHOTS_V1_2.md.

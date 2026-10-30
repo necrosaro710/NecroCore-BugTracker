@@ -1,5 +1,5 @@
 ## Interface: 80300
 ## Title: NecroCore Bug Tracker
-## Notes: Capture bugs and ideas to central NecroCore server
+## Notes: Capture bugs and ideas with optional screenshot companion (v1.2)
 ## SavedVariables: NecroBugLocalBackup
 NecroBugTracker.lua
