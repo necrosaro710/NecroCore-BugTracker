@@ -1,0 +1,9 @@
+# Client-specific configuration, status, downloads and process markers
+client_private_config.json
+client_private_config.json.previous
+client_status.json
+runtime/
+python-*-embed-amd64.zip
+.client_running.lock
+.stop_requested
+__pycache__/
